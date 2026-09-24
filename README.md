@@ -1,6 +1,6 @@
-# QR Event Check-in (MERN)
+# ScanIn — QR event check-in (MERN)
 
-Simple QR ticketing + gate check-in for college events. See `PRD.md` for full requirements.
+QR ticketing + gate check-in for college events. See `PRD.md` for full requirements.
 
 ## Run locally
 
@@ -8,7 +8,7 @@ Simple QR ticketing + gate check-in for college events. See `PRD.md` for full re
 2. Backend:
 ```
 cd backend
-cp .env.example .env  # fill MONGO_URI + JWT_SECRET
+copy .env.example .env  # fill values (Windows: copy, Mac/Linux: cp)
 npm install
 npm run dev
 ```
@@ -26,6 +26,14 @@ Frontend runs on :5173, backend on :5000. Set `VITE_API_URL=http://localhost:500
 - Login as staff -> /scan/:eventId -> enter code -> SUCCESS -> scan again -> ALREADY_USED
 
 ## Deploy
-- Backend -> Render (build: npm install, start: node server.js)
-- Frontend -> Vercel (root: frontend, env VITE_API_URL=your-render-url)
-- DB -> Mongo Atlas
+- DB: Mongo Atlas (Network Access must allow the backend — `0.0.0.0/0` for dev)
+- Backend → Render.com → New Web Service → repo `scanin-qr-checkin`:
+  - Root Directory: `backend`, Build Command: `npm install`, Start Command: `npm start`
+  - Env vars: `MONGO_URI`, `JWT_SECRET` (long random string), `FRONTEND_URL` (your Vercel URL),
+    `SMTP_HOST/PORT/USER/PASS/FROM`, `ALLOW_OTP_DEBUG=false`
+- Frontend → Vercel → Import repo → Root Directory: `frontend`:
+  - Env var: `VITE_API_URL=https://YOUR-BACKEND.onrender.com`
+  - `vercel.json` already handles SPA rewrites so `/events/:id` links work on refresh
+- After both are up: set Render `FRONTEND_URL` to the Vercel URL and redeploy backend (CORS)
+
+Note: Render free tier sleeps after inactivity — first request can take ~50s to wake.
