@@ -2,7 +2,7 @@
 
 **Author:** Harsh
 **Stack:** MERN (MongoDB Atlas, Express, React Vite, Node 22)
-**Status:** MVP v2.4 (in dev)
+**Status:** MVP v2.5 (deploy prep)
 **Location:** `D:\major_projects\ScanIn`
 **Repo name:** `scanin-qr-checkin`
 **Product name:** ScanIn — Door ledger
@@ -135,8 +135,9 @@ Adapted from login screenshot ref (not copied). One `src/index.css`, Space Grote
 - [x] Dashboard + public register + QR stub
 - [x] Manual + camera scan + 10s stats
 - [x] DNS workaround + Atlas `qrcheckin` connect
-- [x] Ledger UI v2 + build pass
-- [ ] Deploy: Render (backend) + Vercel (frontend root=frontend) + Atlas
+- [x] UI rebuilds, verified registration, event teams, split pages, live dashboard
+- [x] Deploy prep: `frontend/vercel.json` SPA rewrites, README env guide
+- [ ] Deploy live: Render (root `backend`) + Vercel (root `frontend`) + Atlas
 - [ ] README screenshots + demo video
 
 ## 10. Demo Script
@@ -169,3 +170,4 @@ Line: "unique crypto codes, JWT RBAC, duplicate-scan guard, live ledger."
 - v2.2 — Post-auth landing per screenshot: dark NOW LIVE card + 4 color tiles (adds real `checkedToday` to event list API) + upcoming cards with category pills/sold bar; header nav Events/Team/Tickets (team/tickets jump to first event's `#team`/`#tickets`), ORGANIZER/STAFF label from token, new-event icon button; `category` field on Event + picker on create
 - v2.3 — Spacing fix: `.grid-main` carries its own bottom margin so Team/Walk-in row no longer touches the Tickets card (cards keep zero inner margin on desktop, normal stack on mobile)
 - v2.4 — Removed RSVP/Free-entry special case on upcoming cards; zero-ticket events show 0% sold + On sale like everything else
+- v2.5 — Deploy prep: `frontend/vercel.json` SPA rewrites, README Render/Vercel env guide; code pushed
