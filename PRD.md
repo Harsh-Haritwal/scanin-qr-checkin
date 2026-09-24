@@ -180,4 +180,4 @@ Line: "unique crypto codes, JWT RBAC, duplicate-scan guard, live ledger."
 - v2.7 — Security fix: registration no longer grants admin to anyone (only first account on fresh DB); new users are team-scoped staff
 - v2.8 — Per-organizer isolation: any login can create events; event list/detail/tickets strictly creator+team (403 otherwise); global admin grants no event access; public invite+OTP+QR unchanged
 - Mailer now prefers Brevo HTTPS API (SMTP blocked from Render), IPv4-first DNS, server-side SMTP error logging
-- v2.9 — Entry removal with reason codes: revoke/restore routes (owner/coordinator), REVOKED gate status, removed badge + reason on roll and stub, revoked excluded from counts
+- v2.9 — Entry removal with reason codes: revoke/restore routes (owner/coordinator), REVOKED gate status, removed badge + reason on roll and stub, revoked excluded from counts; fix: creator returns owner role in ticket `eventAccess` (was 403ing owner-creators)
