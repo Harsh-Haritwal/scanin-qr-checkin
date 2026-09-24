@@ -2,7 +2,7 @@
 
 **Author:** Harsh
 **Stack:** MERN (MongoDB Atlas, Express, React Vite, Node 22)
-**Status:** MVP v2.7 (live)
+**Status:** MVP v2.8 (live)
 **Location:** `D:\major_projects\ScanIn`
 **Repo name:** `scanin-qr-checkin`
 **Product name:** ScanIn — Door ledger
@@ -29,15 +29,16 @@ Non-Goals (v1 out of scope):
 - Offline scan
 
 ## 3. Users & Roles
-1. **Admin** (global) - sees all events, counts as owner everywhere. First account should be admin.
+1. **Organizer (any logged-in user)** - creates events, auto-owner of each. Sees ONLY events they created or were invited to. Nobody can list, open, edit, delete, scan, or view tickets of anyone else's event (API returns 403).
 2. **Event team** - per-event roles, displayed inside the event:
    - `owner` - manage team (invite/remove), edit/close/delete event, everything below
    - `coordinator` - edit/close event, walk-ins, scan, view roll
    - `volunteer` - scan + view roll only
-   Event creator is owner automatically. Global admins bypass team checks.
-3. **Attendee (public, no login)** - verifies via email OTP, gets QR stub.
+   Event creator is owner automatically.
+3. **Attendee (public, no login)** - verifies via email OTP through the invite link only, gets QR stub. Never sees event internals.
+4. **Global `admin` flag** - reserved, grants no event access today (kept for future platform needs). First account on a fresh DB still gets it.
 
-For MVP demo use 1 admin (owner) + 1-2 staff invited as coordinator/volunteer.
+For MVP demo use 2 separate logins: organizer A creates an event, organizer B must not see it until invited.
 
 ## 4. User Stories
 - As Admin, I can login, create event {title, venue, date}
@@ -61,7 +62,7 @@ For MVP demo use 1 admin (owner) + 1-2 staff invited as coordinator/volunteer.
 - Impl: `backend/routes/auth.js`, `backend/middleware/auth.js`
 
 ### 5.2 Events + team
-- `POST /api/events` (global admin) - creator becomes `owner` member
+- `POST /api/events` (any logged-in organizer) - creator becomes `owner` member
 - `GET /api/events` (auth) - only events I'm on the team of (admins see all) + `{total, checked, myRole}` per event
 - `GET /api/events/:id` (team member) - detail + stats + `myRole` + `team: {members, pending}` (pending only for owners)
 - `PUT /api/events/:id` (owner/coordinator) - edit/close; `members/pendingInvites/createdBy` stripped from body
@@ -173,3 +174,4 @@ Line: "unique crypto codes, JWT RBAC, duplicate-scan guard, live ledger."
 - v2.5 — Deploy prep: `frontend/vercel.json` SPA rewrites, README Render/Vercel env guide; code pushed
 - v2.6 — Login surfaces real errors (server message vs unreachable vs unknown) instead of bare "failed"; pushed for Vercel redeploy
 - v2.7 — Security fix: registration no longer grants admin to anyone (only first account on fresh DB); new users are team-scoped staff
+- v2.8 — Per-organizer isolation: any login can create events; event list/detail/tickets strictly creator+team (403 otherwise); global admin grants no event access; public invite+OTP+QR unchanged
