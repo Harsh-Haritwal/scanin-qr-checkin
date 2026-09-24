@@ -16,6 +16,9 @@ export default function EventDetail() {
   const [inviteRole, setInviteRole] = useState('volunteer');
   const [teamErr, setTeamErr] = useState('');
   const [teamOk, setTeamOk] = useState('');
+  const [revoking, setRevoking] = useState(null);
+  const [revokeReason, setRevokeReason] = useState('Misbehavior');
+  const [revokeErr, setRevokeErr] = useState('');
 
   let selfId = '';
   try {
@@ -103,6 +106,30 @@ export default function EventDetail() {
       load();
     } catch (err) {
       setTeamErr((err.response && err.response.data && err.response.data.msg) || 'failed');
+    }
+  };
+
+  const canManageEntry = ev && (ev.myRole === 'owner' || ev.myRole === 'coordinator');
+
+  const confirmRemove = async (e) => {
+    e.preventDefault();
+    setRevokeErr('');
+    try {
+      await api.post('/api/tickets/' + revoking._id + '/revoke', { reason: revokeReason });
+      setRevoking(null);
+      load();
+    } catch (err) {
+      setRevokeErr((err.response && err.response.data && err.response.data.msg) || 'failed');
+    }
+  };
+
+  const restoreEntry = async (ticketId) => {
+    setRevokeErr('');
+    try {
+      await api.post('/api/tickets/' + ticketId + '/restore', {});
+      load();
+    } catch (err) {
+      setRevokeErr((err.response && err.response.data && err.response.data.msg) || 'failed');
     }
   };
 
@@ -243,10 +270,31 @@ export default function EventDetail() {
 
       <div className="card" id="tickets">
         <div className="card-top"><h3>Tickets ({tickets.length})</h3></div>
+        {revoking && (
+          <div className="warn" style={{ marginTop: '0.75rem' }}>
+            <b>Remove {revoking.attendeeName} ({revoking.code})?</b>
+            <p className="muted">They won't be able to check in. Pick the reason — it shows on their ticket and at the gate.</p>
+            <form onSubmit={confirmRemove}>
+              <label>Reason *</label>
+              <select value={revokeReason} onChange={(e) => setRevokeReason(e.target.value)}>
+                <option value="Misbehavior">Misbehavior</option>
+                <option value="Fake details">Fake details</option>
+                <option value="Duplicate ticket">Duplicate ticket</option>
+                <option value="Other">Other</option>
+              </select>
+              {revokeErr && <p className="error">{revokeErr}</p>}
+              <div className="actions">
+                <button className="btn small" type="submit">Confirm removal</button>
+                <button className="btn small outline" type="button" onClick={() => setRevoking(null)}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        )}
+        {revokeErr && !revoking && <p className="error">{revokeErr}</p>}
         <input placeholder="Search name, email or code…" value={search} onChange={(e) => setSearch(e.target.value)} style={{ marginTop: '0.75rem' }} />
         <table>
           <thead>
-            <tr><th>Name</th><th>Mobile</th><th>Age</th><th>Code</th><th>Status</th></tr>
+            <tr><th>Name</th><th>Mobile</th><th>Age</th><th>Code</th><th>Status</th><th></th></tr>
           </thead>
           <tbody>
             {tickets.map((t) => (
@@ -262,7 +310,17 @@ export default function EventDetail() {
                   <Link to={'/t/' + t.code}>{t.code}</Link>
                 </td>
                 <td>
-                  {t.isUsed ? <span className="badge in">In</span> : <span className="badge pending">Pending</span>}
+                  {t.isRevoked
+                    ? <span><span className="badge closed">Removed</span><br /><span className="muted" style={{ fontSize: '0.8rem' }}>{t.revokeReason}</span></span>
+                    : (t.isUsed ? <span className="badge in">In</span> : <span className="badge pending">Pending</span>)}
+                </td>
+                <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                  {canManageEntry && !t.isRevoked && (
+                    <button className="btn small ghost" onClick={() => { setRevoking(t); setRevokeReason('Misbehavior'); }}>Remove</button>
+                  )}
+                  {canManageEntry && t.isRevoked && (
+                    <button className="btn small ghost" onClick={() => restoreEntry(t._id)}>Restore</button>
+                  )}
                 </td>
               </tr>
             ))}

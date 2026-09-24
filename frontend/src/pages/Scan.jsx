@@ -108,6 +108,13 @@ export default function Scan() {
       {result && result.status === 'INVALID' && (
         <div className="warn"><b>Not in the book.</b><p className="mono">{result.msg}</p></div>
       )}
+      {result && result.status === 'REVOKED' && (
+        <div className="warn">
+          <span className="badge closed">Entry removed</span>
+          <h3 style={{ marginTop: '0.4rem' }}>{result.ticket && result.ticket.attendeeName} — do not admit</h3>
+          <p className="muted mono">Reason: {result.ticket && result.ticket.revokeReason}</p>
+        </div>
+      )}
       </div>
 
       <div>

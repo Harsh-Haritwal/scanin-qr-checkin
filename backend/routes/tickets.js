@@ -217,6 +217,9 @@ router.post('/checkin', auth, async (req, res) => {
 
   const t = await Ticket.findOne({ code, eventId });
   if (!t) return res.status(404).json({ status: 'INVALID', msg: 'ticket not found' });
+  if (t.isRevoked) {
+    return res.status(403).json({ status: 'REVOKED', msg: 'entry removed: ' + (t.revokeReason || ''), ticket: t });
+  }
   if (t.isUsed) {
     return res.status(400).json({ status: 'ALREADY_USED', msg: 'already checked in', ticket: t });
   }
@@ -225,6 +228,44 @@ router.post('/checkin', auth, async (req, res) => {
   t.checkedInBy = req.user.id;
   await t.save();
   res.json({ status: 'SUCCESS', ticket: t });
+});
+
+const REVOKE_REASONS = ['Misbehavior', 'Fake details', 'Duplicate ticket', 'Other'];
+
+// Remove someone's entry with a reason (owner/coordinator only)
+router.post('/:id/revoke', auth, async (req, res) => {
+  const t = await Ticket.findById(req.params.id);
+  if (!t) return res.status(404).json({ msg: 'ticket not found' });
+  const gate = await eventAccess(t.eventId, req.user);
+  if (gate.err) return res.status(gate.code).json({ msg: gate.err });
+  if (gate.role !== 'owner' && gate.role !== 'coordinator') {
+    return res.status(403).json({ msg: 'owner or coordinator only' });
+  }
+  const { reason } = req.body;
+  if (!REVOKE_REASONS.includes(reason)) return res.status(400).json({ msg: 'pick a valid reason' });
+  t.isRevoked = true;
+  t.revokeReason = reason;
+  t.revokedBy = req.user.id;
+  t.revokedAt = new Date();
+  await t.save();
+  res.json({ ok: true, ticket: t });
+});
+
+// Undo a removal (owner/coordinator only)
+router.post('/:id/restore', auth, async (req, res) => {
+  const t = await Ticket.findById(req.params.id);
+  if (!t) return res.status(404).json({ msg: 'ticket not found' });
+  const gate = await eventAccess(t.eventId, req.user);
+  if (gate.err) return res.status(gate.code).json({ msg: gate.err });
+  if (gate.role !== 'owner' && gate.role !== 'coordinator') {
+    return res.status(403).json({ msg: 'owner or coordinator only' });
+  }
+  t.isRevoked = false;
+  t.revokeReason = undefined;
+  t.revokedBy = undefined;
+  t.revokedAt = undefined;
+  await t.save();
+  res.json({ ok: true, ticket: t });
 });
 
 module.exports = router;

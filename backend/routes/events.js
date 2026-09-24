@@ -64,8 +64,8 @@ router.get('/', async (req, res) => {
   dayStart.setHours(0, 0, 0, 0);
   const out = [];
   for (const e of events) {
-    const total = await Ticket.countDocuments({ eventId: e._id });
-    const checked = await Ticket.countDocuments({ eventId: e._id, isUsed: true });
+    const total = await Ticket.countDocuments({ eventId: e._id, isRevoked: { $ne: true } });
+    const checked = await Ticket.countDocuments({ eventId: e._id, isUsed: true, isRevoked: { $ne: true } });
     const checkedToday = await Ticket.countDocuments({ eventId: e._id, isUsed: true, usedAt: { $gte: dayStart } });
     out.push({ ...e.toObject(), total, checked, checkedToday, myRole: eventRole(e, req.user) });
   }
@@ -78,8 +78,8 @@ router.get('/:id', async (req, res) => {
   if (!ev) return res.status(404).json({ msg: 'not found' });
   const role = eventRole(ev, req.user);
   if (!role) return res.status(403).json({ msg: 'not on this event team' });
-  const total = await Ticket.countDocuments({ eventId: ev._id });
-  const checked = await Ticket.countDocuments({ eventId: ev._id, isUsed: true });
+  const total = await Ticket.countDocuments({ eventId: ev._id, isRevoked: { $ne: true } });
+  const checked = await Ticket.countDocuments({ eventId: ev._id, isUsed: true, isRevoked: { $ne: true } });
   const obj = ev.toObject();
   delete obj.pendingInvites; // invites go out via team.pending for owners only
   const out = { ...obj, total, checked, myRole: role, team: teamView(ev) };

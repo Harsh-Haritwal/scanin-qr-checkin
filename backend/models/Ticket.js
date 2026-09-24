@@ -9,6 +9,10 @@ const ticketSchema = new mongoose.Schema({
   code: { type: String, required: true, unique: true, index: true },
   isUsed: { type: Boolean, default: false },
   usedAt: Date,
+  isRevoked: { type: Boolean, default: false },
+  revokeReason: { type: String, enum: ['Misbehavior', 'Fake details', 'Duplicate ticket', 'Other'], default: undefined },
+  revokedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  revokedAt: Date,
   checkedInBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });
 

@@ -16,9 +16,11 @@ export default function MyTicket() {
 
   return (
     <div className="card auth-wrap ticket-qr">
-      {t.isUsed
-        ? <span className="badge closed">Checked in</span>
-        : <span className="badge open">Valid ticket</span>}
+      {t.isRevoked
+        ? <span className="badge closed">Entry removed</span>
+        : (t.isUsed
+          ? <span className="badge closed">Checked in</span>
+          : <span className="badge open">Valid ticket</span>)}
       <h1 style={{ marginTop: '0.6rem' }}>{t.eventId && t.eventId.title}</h1>
       <p className="muted">{t.attendeeName} · {t.attendeeEmail}</p>
       <div className="qr-box" style={{ marginTop: '0.75rem' }}>
@@ -26,6 +28,7 @@ export default function MyTicket() {
       </div>
       <div className="code mono">{t.code}</div>
       <p className="muted">Screenshot this page for the gate.</p>
+      {t.isRevoked && <p className="error">Removed: {t.revokeReason}. This ticket won't scan.</p>}
     </div>
   );
 }
