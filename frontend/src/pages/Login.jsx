@@ -23,7 +23,13 @@ export default function Login() {
       localStorage.setItem('token', res.data.token);
       nav('/');
     } catch (e) {
-      setErr((e.response && e.response.data && e.response.data.msg) || 'failed');
+      if (e.response && e.response.data && e.response.data.msg) {
+        setErr(e.response.data.msg);
+      } else if (e.request) {
+        setErr('Cannot reach the server. It may be waking up — wait a minute and retry.');
+      } else {
+        setErr('Something went wrong. Retry.');
+      }
     }
   };
 
