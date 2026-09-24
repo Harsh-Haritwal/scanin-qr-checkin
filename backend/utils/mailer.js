@@ -1,4 +1,9 @@
 const nodemailer = require('nodemailer');
+const dns = require('dns');
+
+// Render free instances have no IPv6 egress, but smtp.gmail.com resolves
+// to IPv6 first — without this Node tries IPv6 and dies with ENETUNREACH.
+try { dns.setDefaultResultOrder('ipv4first'); } catch (e) {}
 
 let transporter = null;
 if (process.env.SMTP_HOST && process.env.SMTP_USER) {
