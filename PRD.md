@@ -2,7 +2,7 @@
 
 **Author:** Harsh
 **Stack:** MERN (MongoDB Atlas, Express, React Vite, Node 22)
-**Status:** MVP v2.5 (deploy prep)
+**Status:** MVP v2.6 (live debugging)
 **Location:** `D:\major_projects\ScanIn`
 **Repo name:** `scanin-qr-checkin`
 **Product name:** ScanIn — Door ledger
@@ -171,3 +171,4 @@ Line: "unique crypto codes, JWT RBAC, duplicate-scan guard, live ledger."
 - v2.3 — Spacing fix: `.grid-main` carries its own bottom margin so Team/Walk-in row no longer touches the Tickets card (cards keep zero inner margin on desktop, normal stack on mobile)
 - v2.4 — Removed RSVP/Free-entry special case on upcoming cards; zero-ticket events show 0% sold + On sale like everything else
 - v2.5 — Deploy prep: `frontend/vercel.json` SPA rewrites, README Render/Vercel env guide; code pushed
+- v2.6 — Login surfaces real errors (server message vs unreachable vs unknown) instead of bare "failed"; pushed for Vercel redeploy
