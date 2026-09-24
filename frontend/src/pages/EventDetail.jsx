@@ -119,7 +119,13 @@ export default function EventDetail() {
       setRevoking(null);
       load();
     } catch (err) {
-      setRevokeErr((err.response && err.response.data && err.response.data.msg) || 'failed');
+      if (err.response && err.response.data && err.response.data.msg) {
+        setRevokeErr(err.response.data.msg);
+      } else if (err.response) {
+        setRevokeErr('Request failed (' + err.response.status + '). The live backend may be on older code — redeploy Render.');
+      } else {
+        setRevokeErr('Cannot reach the server. Retry.');
+      }
     }
   };
 
