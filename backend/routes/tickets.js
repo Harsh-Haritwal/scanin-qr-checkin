@@ -98,6 +98,7 @@ router.post('/public/:eventId/request-otp', async (req, res) => {
     if (r.dev && process.env.ALLOW_OTP_DEBUG === 'true') out.debugCode = code;
     res.json(out);
   } catch (e) {
+    console.error('SMTP send failed:', e.message);
     res.status(500).json({ msg: 'could not send email. Check SMTP settings.' });
   }
 });
