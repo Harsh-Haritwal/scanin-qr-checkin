@@ -45,10 +45,11 @@ function teamView(ev) {
 
 // create event (admin only) — creator becomes owner
 router.post('/', needRole('admin'), async (req, res) => {
-  const { title, description, venue, date } = req.body;
+  const { title, description, venue, date, category } = req.body;
   if (!title || !date) return res.status(400).json({ msg: 'title and date required' });
   const ev = await Event.create({
     title, description, venue, date,
+    category: category || '',
     createdBy: req.user.id,
     members: [{ user: req.user.id, role: 'owner' }]
   });
@@ -62,11 +63,14 @@ router.get('/', async (req, res) => {
     q = { $or: [{ createdBy: req.user.id }, { 'members.user': req.user.id }] };
   }
   const events = await Event.find(q).sort({ date: 1 });
+  const dayStart = new Date();
+  dayStart.setHours(0, 0, 0, 0);
   const out = [];
   for (const e of events) {
     const total = await Ticket.countDocuments({ eventId: e._id });
     const checked = await Ticket.countDocuments({ eventId: e._id, isUsed: true });
-    out.push({ ...e.toObject(), total, checked, myRole: eventRole(e, req.user) });
+    const checkedToday = await Ticket.countDocuments({ eventId: e._id, isUsed: true, usedAt: { $gte: dayStart } });
+    out.push({ ...e.toObject(), total, checked, checkedToday, myRole: eventRole(e, req.user) });
   }
   res.json(out);
 });

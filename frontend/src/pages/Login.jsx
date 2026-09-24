@@ -28,31 +28,41 @@ export default function Login() {
   };
 
   return (
-    <div className="card auth-wrap">
-      <span className="badge">Staff only</span>
-      <h1 style={{ marginTop: '0.6rem' }}>{isRegister ? 'Create account' : 'Welcome back'}</h1>
-      <p className="muted">Organizers and volunteers. Attendees need no account.</p>
-      <form onSubmit={submit} style={{ marginTop: '0.75rem' }}>
-        {isRegister && (
-          <div>
-            <label>Name</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
-          </div>
-        )}
-        <label>Email</label>
-        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@college.edu" />
-        <label>Password</label>
-        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
-        {err && <p className="error">{err}</p>}
-        <button className="btn block" type="submit" style={{ marginTop: '0.5rem' }}>
-          {isRegister ? 'Register →' : 'Sign in →'}
-        </button>
-      </form>
-      <p className="muted" style={{ marginTop: '0.75rem' }}>
-        <a href="#" onClick={(e) => { e.preventDefault(); setIsRegister(!isRegister); }}>
-          {isRegister ? 'Have an account? Sign in' : 'New organizer? Register'}
-        </a>
-      </p>
+    <div className="auth-wrap">
+      <div className="auth-head">
+        <span className="badge">Staff only</span>
+        <h1>{isRegister ? 'Join the crew' : 'Welcome back'}</h1>
+        <p className="muted">{isRegister ? 'Create your organizer account.' : 'Sign in to run your gates.'}</p>
+      </div>
+      <div className="card">
+        <form onSubmit={submit}>
+          {isRegister && (
+            <div>
+              <label>Name</label>
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
+            </div>
+          )}
+          <label>Email</label>
+          <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@team.com" />
+          <label>Password</label>
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+          {err && <p className="error" style={{ marginTop: '0.75rem' }}>{err}</p>}
+          <button className="btn block" type="submit" style={{ marginTop: '1.1rem' }}>
+            {isRegister ? 'Create account' : 'Sign in'}
+          </button>
+        </form>
+        <hr className="auth-divider" />
+        <p className="auth-foot muted">
+          {isRegister ? 'Already have an account? ' : 'New here? '}
+          <a
+            className="accent-link"
+            href="#"
+            onClick={(e) => { e.preventDefault(); setIsRegister(!isRegister); }}
+          >
+            {isRegister ? 'Sign in' : 'Create an account'}
+          </a>
+        </p>
+      </div>
     </div>
   );
 }

@@ -2,11 +2,36 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 
+const CAT_CLASS = {
+  MUSIC: 'cat-yellow',
+  TECH: 'cat-blue',
+  FOOD: 'cat-purple',
+  MEETUP: 'cat-green',
+  WORKSHOP: 'cat-orange'
+};
+
+function catClass(c) {
+  return CAT_CLASS[String(c || '').toUpperCase()] || 'cat-gray';
+}
+
+function fmtDay(d) {
+  return new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' });
+}
+
+function fmtGate(d) {
+  const h = new Date(d).toLocaleTimeString('en-US', { hour: 'numeric' }).toLowerCase().replace(' ', '');
+  return h + ' gates';
+}
+
+function saleState(ev, pct) {
+  if (!ev.isActive) return { txt: 'Closed', cls: 'st-closed' };
+  if (pct >= 90) return { txt: 'Almost full', cls: 'st-full' };
+  return { txt: 'On sale', cls: 'st-open' };
+}
+
 export default function Dashboard() {
   const [events, setEvents] = useState([]);
-  const [title, setTitle] = useState('');
-  const [venue, setVenue] = useState('');
-  const [date, setDate] = useState('');
+  const [showAll, setShowAll] = useState(false);
   const nav = useNavigate();
 
   const load = async () => {
@@ -20,123 +45,93 @@ export default function Dashboard() {
 
   useEffect(() => { load(); }, []);
 
-  const create = async (e) => {
-    e.preventDefault();
-    if (!title || !date) return alert('title + date needed');
-    await api.post('/api/events', { title: title, venue: venue, date: date });
-    setTitle('');
-    setVenue('');
-    setDate('');
-    load();
-  };
-
-  const issued = events.reduce((a, e) => a + (e.total || 0), 0);
+  const live = events.find((e) => e.isActive) || events[0] || null;
   const checked = events.reduce((a, e) => a + (e.checked || 0), 0);
-  const rate = issued ? Math.round((checked / issued) * 100) : 0;
+  const today = events.reduce((a, e) => a + (e.checkedToday || 0), 0);
+  const left = events.reduce((a, e) => a + Math.max((e.total || 0) - (e.checked || 0), 0), 0);
+  const gateOpen = events.some((e) => e.isActive);
+  const listed = showAll ? events : events.slice(0, 3);
 
   return (
     <div>
-      <div className="card hero">
-        <span className="badge">✦ Gate check-in, without the spreadsheet</span>
-        <h1 style={{ marginTop: '1rem' }}>Door entry your volunteers actually enjoy</h1>
-        <p className="sub">
-          Create an event, share one link, and stamp QR tickets at the gate.
-          No double entry, live counts, works from any phone browser.
-        </p>
-        <div className="hero-cta">
-          <a href="#new-event" className="btn lg">Create event →</a>
-          <a href="#how-it-works" className="btn lg outline">How it works</a>
-        </div>
-      </div>
-
-      <div className="stat-grid">
-        <div className="stat">
-          <small>Events</small>
-          <div className="num">{events.length}</div>
-        </div>
-        <div className="stat">
-          <small>Tickets issued</small>
-          <div className="num">{issued}</div>
-        </div>
-        <div className="stat">
-          <small>Check-in rate</small>
-          <div className="num">{rate + '%'}</div>
-        </div>
-      </div>
-
-      <div className="card" id="how-it-works">
-        <div className="card-top">
-          <h3>How it works</h3>
-          <span className="badge">3 steps</span>
-        </div>
-        <div className="stat-grid">
-          <div>
-            <h3>1. Create event</h3>
-            <p className="muted">Add a title, venue and date. Takes under a minute.</p>
-          </div>
-          <div>
-            <h3>2. Share the link</h3>
-            <p className="muted">Attendees register themselves and get a QR ticket. No login needed.</p>
-          </div>
-          <div>
-            <h3>3. Scan at the gate</h3>
-            <p className="muted">Volunteers scan with any phone camera. Double scans are blocked automatically.</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="card" id="new-event" style={{ marginTop: '1rem' }}>
-        <div className="card-top">
-          <h3>New event</h3>
-          <span className="badge">Form 01</span>
-        </div>
-        <p className="muted">Takes under a minute. Share the invite link right after.</p>
-        <form onSubmit={create} style={{ marginTop: '0.75rem' }}>
-          <label>Title</label>
-          <input placeholder="e.g. HackNight — Final showcase" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <div className="form-row">
-            <div>
-              <label>Venue</label>
-              <input placeholder="Seminar Hall B" value={venue} onChange={(e) => setVenue(e.target.value)} />
-            </div>
-            <div>
-              <label>Date</label>
-              <input type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} />
+      {live && (
+        <div className="dash-top">
+          <div className="live-card">
+            <span className="deco deco-green"></span>
+            <span className="deco deco-red"></span>
+            <div className="now-live">Now live</div>
+            <h1>{live.title}</h1>
+            <p>{live.description || 'Gates are open. Scan QR tickets at the door.'}</p>
+            <p className="live-meta">
+              {[live.venue, fmtDay(live.date), fmtGate(live.date)].filter(Boolean).join(' · ')}
+            </p>
+            <div className="actions">
+              <Link to={'/scan/' + live._id} className="btn">Open scanner</Link>
+              <a href={'/events/' + live._id + '#team'} className="btn dark-ghost">Manage team</a>
             </div>
           </div>
-          <div className="actions">
-            <button className="btn" type="submit">Create event</button>
+          <div className="tiles">
+            <div className="tile tile-green">
+              <small>Checked in</small>
+              <div className="big">{checked.toLocaleString()}</div>
+            </div>
+            <div className="tile tile-blue">
+              <small>Scanned today</small>
+              <div className="big">{today.toLocaleString()}</div>
+            </div>
+            <div className="tile tile-red">
+              <small>Tickets left</small>
+              <div className="big">{left.toLocaleString()}</div>
+            </div>
+            <div className="tile tile-yellow">
+              <small>Gate status</small>
+              <div className="big small-big">{gateOpen ? 'Open & steady' : 'All closed'}</div>
+            </div>
           </div>
-        </form>
+        </div>
+      )}
+
+      <div className="upcoming-head">
+        <h2>Upcoming events</h2>
+        {events.length > 3 && (
+          <button className="linklike" onClick={() => setShowAll((s) => !s)}>
+            {showAll ? 'Show less' : 'View all'}
+          </button>
+        )}
       </div>
 
-      <h2 className="section-title">Events ({events.length})</h2>
       <div className="events">
-        {events.map((ev) => {
+        {listed.map((ev) => {
           const pct = ev.total ? Math.round((ev.checked / ev.total) * 100) : 0;
-          const badgeCls = ev.isActive ? 'badge open' : 'badge closed';
-          const badgeTxt = ev.isActive ? 'Open' : 'Closed';
+          const st = saleState(ev, pct);
+          const soldTxt = pct + '% sold';
           return (
-            <div key={ev._id} className="card" style={{ marginBottom: 0 }}>
-              <div className="card-top">
-                <span className={badgeCls}>{badgeTxt}</span>
-                <span className="muted mono" style={{ fontSize: '0.85rem' }}>{ev.checked}/{ev.total}</span>
+            <Link key={ev._id} to={'/events/' + ev._id} className="ev-card">
+              <div className="ev-top">
+                {ev.category
+                  ? <span className={'cat-pill ' + catClass(ev.category)}>{ev.category}</span>
+                  : <span className="cat-pill cat-gray">Event</span>}
+                <span className="muted">{fmtDay(ev.date)}</span>
               </div>
-              <h3 style={{ marginTop: '0.5rem' }}>{ev.title}</h3>
-              <p className="muted">{new Date(ev.date).toLocaleString()} · {ev.venue || '—'}</p>
-              <div className="progress"><div style={{ width: pct + '%' }} /></div>
-              <p className="muted" style={{ fontSize: '0.9rem' }}>{pct + '%'} checked in</p>
-              <div className="actions">
-                <Link to={'/events/' + ev._id} className="btn small">Open</Link>
-                <Link to={'/scan/' + ev._id} className="btn small outline">Scan</Link>
-                <Link to={'/r/' + ev._id} className="btn small ghost">Invite →</Link>
+              <h3>{ev.title}</h3>
+              <p className="muted">{ev.venue ? ev.venue + ', ' + fmtGate(ev.date) : fmtGate(ev.date)}</p>
+              <div className="sold-row">
+                <b>{soldTxt}</b>
+                <span className={st.cls}>{st.txt}</span>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
+
       {events.length === 0 && (
-        <div className="card"><p className="muted">No events yet. Create your first one above.</p></div>
+        <div className="card">
+          <p className="muted">No events yet.</p>
+          <div className="actions">
+            <Link to="/events/new" className="btn small">Create your first event →</Link>
+            <Link to="/how-it-works" className="btn small outline">How it works</Link>
+          </div>
+        </div>
       )}
     </div>
   );

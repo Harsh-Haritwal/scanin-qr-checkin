@@ -142,7 +142,7 @@ export default function EventDetail() {
       </div>
 
       <div className="grid-main">
-      <div className="card">
+      <div className="card" id="team">
         <div className="card-top">
           <h3>Team ({ev.team ? ev.team.members.length : 0})</h3>
           {ev.myRole && <span className="badge">You: {ev.myRole}</span>}
@@ -241,7 +241,7 @@ export default function EventDetail() {
       </div>
       </div>
 
-      <div className="card">
+      <div className="card" id="tickets">
         <div className="card-top"><h3>Tickets ({tickets.length})</h3></div>
         <input placeholder="Search name, email or code…" value={search} onChange={(e) => setSearch(e.target.value)} style={{ marginTop: '0.75rem' }} />
         <table>

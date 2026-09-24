@@ -2,7 +2,7 @@
 
 **Author:** Harsh
 **Stack:** MERN (MongoDB Atlas, Express, React Vite, Node 22)
-**Status:** MVP v1.9 (in dev)
+**Status:** MVP v2.4 (in dev)
 **Location:** `D:\major_projects\ScanIn`
 **Repo name:** `scanin-qr-checkin`
 **Product name:** ScanIn — Door ledger
@@ -71,7 +71,7 @@ For MVP demo use 1 admin (owner) + 1-2 staff invited as coordinator/volunteer.
 - Ticket list/walk-in/check-in require event team membership (global admins bypass)
 - Impl: `backend/routes/events.js`, `backend/routes/tickets.js` (`eventAccess`)
 
-Event fields: title, description, venue, date, isActive default true, createdBy, members[{user, role}], pendingInvites[{email, role}]
+Event fields: title, description, venue, date, category (MUSIC/TECH/FOOD/MEETUP/WORKSHOP/''), isActive default true, createdBy, members[{user, role}], pendingInvites[{email, role}]
 
 ### 5.3 Tickets (actual routes)
 - `POST /api/tickets/public/:eventId/request-otp` - PUBLIC step 1. {attendeeName, attendeeEmail, mobileNo, age} all required; email regex, 10-digit mobile (tolerates +91/0 prefix), age 5-120. Checks event active, rejects duplicate email per event (409), 60s resend cooldown (429). Creates 6-digit OTP (10-min TTL via `Otp` model), sends via SMTP (`utils/mailer.js`); dev fallback logs OTP, returns it only if `ALLOW_OTP_DEBUG=true`.
@@ -88,9 +88,11 @@ Event fields: title, description, venue, date, isActive default true, createdBy,
 Code format: 8-char uppercase, no 0/O/1/I, `crypto.randomBytes`, 3x collision retry. e.g. `K7Q2P9XA`.
 
 ### 5.4 Frontend Pages (actual)
-- `/login` - `pages/Login.jsx`. Clerk's entrance. Toggle login/register.
-- `/` - `pages/Dashboard.jsx`. Hero `The door list, settled.` + Form 01 + ledger index №001… with progress + Ledger/Door/Invite actions.
-- `/events/:id` - `pages/EventDetail.jsx`. Dossier + Issued/Stamped/% + invitation slip copy + Take the door + Form 02 walk-in + roll table with search.
+- `/login` - `pages/Login.jsx`. Staff-only card, login/register toggle.
+- `/` - `pages/Dashboard.jsx`. Post-auth landing per screenshot: dark NOW LIVE card (first open event, Open scanner + Manage team), 4 color tiles (checked in, scanned today via `checkedToday`, tickets left, gate status), Upcoming events cards (category pill, date, venue, sold bar + status) with View all toggle.
+- `/events/new` - `pages/NewEvent.jsx`. Dedicated create form incl. category select, redirects to detail.
+- `/how-it-works` - `pages/HowItWorks.jsx`. Organizer / attendee / gate flows, CTAs.
+- `/events/:id` - `pages/EventDetail.jsx`. Sections anchorable via `#team` / `#tickets` for header nav. Dossier + Issued/Stamped/% + invitation slip copy + Take the door + Form 02 walk-in + roll table with search.
 - `/r/:eventId` - `pages/PublicRegister.jsx`. No nav. 2-step verified card: details (name/email/mobile/age, all required) → 6-digit email OTP → ticket. Public axios (no token).
 - `/t/:code` - `pages/MyTicket.jsx`. Boarding-pass `card ticket` + `ticket-stub` perforation, `qrcode.react QRCodeSVG value=code size 130`, large mono code.
 - `/scan/:eventId` - `pages/Scan.jsx`. Door terminal. Manual mono input + Stamp button + Open lens camera (`html5-qrcode Html5Qrcode`, rear camera, 10fps, 250px qrbox, 2.5s cooldown). Recent hand list.
@@ -114,14 +116,13 @@ Otp: { eventId, attendeeName, attendeeEmail, mobileNo, age, code 6-digit, attemp
 
 Indexes: Ticket.code unique, Ticket(eventId + attendeeEmail) unique (one ticket per email per event), Otp(eventId + attendeeEmail) unique, Otp.expiresAt TTL.
 
-## 7. UI / UX — Design-system SaaS v4 (current)
-Inspired by `Design System SaaS Landing Page` ref (shadcn tokens), adapted — not copied. One `src/index.css`, no Tailwind.
-- Tokens: 14px base, white bg, `--primary #030213`, muted `#717182`, input `#f3f3f5`, border `rgba(0,0,0,.1)`, radius 10px, subtle shadows
-- Header `App.jsx`: sticky + blurred, square logo mark + name, muted nav links, ghost Sign in + solid Get started
-- Dashboard: badge pill hero, 2.4rem heading + muted sub + primary/outline CTAs, 3 stat cards, New event card, 2-col event cards with progress + primary/outline/ghost actions
-- EventDetail/Scan/Login/MyTicket/PublicRegister: same cards, buttons (primary/outline/ghost), badges, tables
-- No redux, no toast lib. Camera needs HTTPS/localhost.
-- Deps: `axios, react-router-dom, qrcode.react, html5-qrcode`
+## 7. UI / UX — Cream + ink + yellow v5 (current)
+Adapted from login screenshot ref (not copied). One `src/index.css`, Space Grotesk headings + Inter body via Google Fonts.
+- Tokens: cream `#f6f1e5` bg, ink `#191817` 2px borders, yellow `#ffd23f` pill buttons with hard offset shadow + press effect, purple `#b79cf7` badges, red-orange `#e8552f` logo/links
+- Header: cream bar, 2px ink rule, red circle S logo
+- Login matches ref: purple STAFF ONLY pill, big heading, bordered card, uppercase labels, yellow block button, dashed divider, red account link
+- Cards/tables/forms/scanner inherit the same bordered language; stat numbers and headings in Space Grotesk
+- Deps unchanged: `axios, react-router-dom, qrcode.react, html5-qrcode`
 
 ## 8. Non-Functional
 - Checkin <300ms single query+save
@@ -163,3 +164,8 @@ Line: "unique crypto codes, JWT RBAC, duplicate-scan guard, live ledger."
 - v1.7 fix — SMTP was missing from real `.env` so no mail sent: added Gmail SMTP (app password) + `ALLOW_OTP_DEBUG=false`; live send test returns SENT; UI shows dev code only when SMTP unconfigured
 - v1.8 — Event teams: `members` + `pendingInvites` on Event, owner/coordinator/volunteer roles, invite/remove/leave routes, pending auto-join on register, team section on EventDetail, ticket routes gated by team membership, event list scoped to my events
 - v1.9 — Full-width layout: container 1100→1440px, events grid 3-col (2/1 on smaller), Team + Walk-in side-by-side via `.grid-main`, scanner form + recent side-by-side via `.scan-layout`
+- v2.0 — Cream/ink/yellow UI v5 per login screenshot ref (adapted): cream bg, 2px ink borders, yellow pill buttons with press shadow, purple badges, red logo/links, Space Grotesk + Inter, Login rebuilt to match ref, all pages inherit, build verified
+- v2.1 — Page split: new `/events/new` create page and `/how-it-works` guide page; Dashboard slimmed to hero + stats + grid; header nav Events/How-it-works
+- v2.2 — Post-auth landing per screenshot: dark NOW LIVE card + 4 color tiles (adds real `checkedToday` to event list API) + upcoming cards with category pills/sold bar; header nav Events/Team/Tickets (team/tickets jump to first event's `#team`/`#tickets`), ORGANIZER/STAFF label from token, new-event icon button; `category` field on Event + picker on create
+- v2.3 — Spacing fix: `.grid-main` carries its own bottom margin so Team/Walk-in row no longer touches the Tickets card (cards keep zero inner margin on desktop, normal stack on mobile)
+- v2.4 — Removed RSVP/Free-entry special case on upcoming cards; zero-ticket events show 0% sold + On sale like everything else
