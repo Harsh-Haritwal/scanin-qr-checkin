@@ -12,7 +12,7 @@ const router = express.Router();
 async function eventAccess(eventId, user) {
   const ev = await Event.findById(eventId);
   if (!ev) return { err: 'event not found', code: 404 };
-  if (ev.createdBy && String(ev.createdBy) === String(user.id)) return { ev };
+  if (ev.createdBy && String(ev.createdBy) === String(user.id)) return { ev, role: 'owner' };
   const m = (ev.members || []).find((x) => String(x.user) === String(user.id));
   if (!m) return { err: 'not on this event team', code: 403 };
   return { ev, role: m.role };
