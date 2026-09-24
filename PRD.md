@@ -2,7 +2,7 @@
 
 **Author:** Harsh
 **Stack:** MERN (MongoDB Atlas, Express, React Vite, Node 22)
-**Status:** MVP v2.6 (live debugging)
+**Status:** MVP v2.7 (live)
 **Location:** `D:\major_projects\ScanIn`
 **Repo name:** `scanin-qr-checkin`
 **Product name:** ScanIn — Door ledger
@@ -53,7 +53,7 @@ For MVP demo use 1 admin (owner) + 1-2 staff invited as coordinator/volunteer.
 ## 5. Functional Requirements
 ### 5.1 Auth
 - JWT + bcrypt. Roles in token.
-- `POST /api/auth/register {name,email,password,role}` - demo allows admin/staff
+- `POST /api/auth/register {name,email,password,role}` - only the first account on a fresh DB may become admin; everyone after is staff (team-scoped). Closes open-admin hole.
 - `POST /api/auth/login`
 - `GET /api/auth/me`
 - Frontend stores token in localStorage, `Authorization: Bearer <token>` via `src/api.js`.
@@ -172,3 +172,4 @@ Line: "unique crypto codes, JWT RBAC, duplicate-scan guard, live ledger."
 - v2.4 — Removed RSVP/Free-entry special case on upcoming cards; zero-ticket events show 0% sold + On sale like everything else
 - v2.5 — Deploy prep: `frontend/vercel.json` SPA rewrites, README Render/Vercel env guide; code pushed
 - v2.6 — Login surfaces real errors (server message vs unreachable vs unknown) instead of bare "failed"; pushed for Vercel redeploy
+- v2.7 — Security fix: registration no longer grants admin to anyone (only first account on fresh DB); new users are team-scoped staff
