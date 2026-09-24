@@ -15,9 +15,13 @@ router.post('/register', async (req, res) => {
   if (exists) return res.status(400).json({ msg: 'email already used' });
 
   const passwordHash = await bcrypt.hash(password, 10);
+  // Only the very first account on a fresh DB may become admin.
+  // Everyone after that is staff, scoped to teams they're invited to.
+  const adminExists = await User.exists({ role: 'admin' });
+  const safeRole = (!adminExists && role === 'admin') ? 'admin' : 'staff';
   const user = await User.create({
     name, email, passwordHash,
-    role: role === 'admin' ? 'admin' : 'staff'
+    role: safeRole
   });
 
   // join events that invited this email before signup
