@@ -8,11 +8,10 @@ const { sendOtpEmail } = require('../utils/mailer');
 
 const router = express.Router();
 
-// event must exist + caller must be on its team (global admins bypass)
+// event must exist + caller must be on its team
 async function eventAccess(eventId, user) {
   const ev = await Event.findById(eventId);
   if (!ev) return { err: 'event not found', code: 404 };
-  if (user.role === 'admin') return { ev };
   if (ev.createdBy && String(ev.createdBy) === String(user.id)) return { ev };
   const m = (ev.members || []).find((x) => String(x.user) === String(user.id));
   if (!m) return { err: 'not on this event team', code: 403 };

@@ -2,7 +2,7 @@ const express = require('express');
 const Event = require('../models/Event');
 const Ticket = require('../models/Ticket');
 const User = require('../models/User');
-const { auth, needRole } = require('../middleware/auth');
+const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -13,11 +13,11 @@ function memberId(m) {
   return String((m.user && m.user._id) || m.user);
 }
 
-// effective role in event: creator + global admins count as owner
+// effective role in event: creator counts as owner.
+// NOTE: global admin grants nothing here — every organizer only sees their own events.
 function eventRole(ev, user) {
   if (!ev || !user) return null;
   if (ev.createdBy && String(ev.createdBy) === String(user.id)) return 'owner';
-  if (user.role === 'admin') return 'owner';
   const m = (ev.members || []).find((x) => memberId(x) === String(user.id));
   return m ? m.role : null;
 }
@@ -43,8 +43,8 @@ function teamView(ev) {
   };
 }
 
-// create event (admin only) — creator becomes owner
-router.post('/', needRole('admin'), async (req, res) => {
+// create event (any logged-in organizer) — creator becomes owner
+router.post('/', async (req, res) => {
   const { title, description, venue, date, category } = req.body;
   if (!title || !date) return res.status(400).json({ msg: 'title and date required' });
   const ev = await Event.create({
@@ -56,12 +56,9 @@ router.post('/', needRole('admin'), async (req, res) => {
   res.json(ev);
 });
 
-// list events I'm on the team of (admins see all)
+// list events I'm on the team of — nobody sees anyone else's
 router.get('/', async (req, res) => {
-  let q = {};
-  if (req.user.role !== 'admin') {
-    q = { $or: [{ createdBy: req.user.id }, { 'members.user': req.user.id }] };
-  }
+  const q = { $or: [{ createdBy: req.user.id }, { 'members.user': req.user.id }] };
   const events = await Event.find(q).sort({ date: 1 });
   const dayStart = new Date();
   dayStart.setHours(0, 0, 0, 0);
