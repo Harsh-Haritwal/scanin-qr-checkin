@@ -2,7 +2,7 @@
 
 **Author:** Harsh
 **Stack:** MERN (MongoDB Atlas, Express, React Vite, Node 22)
-**Status:** MVP v2.8 (live)
+**Status:** MVP v2.9 (in dev)
 **Location:** `D:\major_projects\ScanIn`
 **Repo name:** `scanin-qr-checkin`
 **Product name:** ScanIn — Door ledger
@@ -50,6 +50,7 @@ For MVP demo use 2 separate logins: organizer A creates an event, organizer B mu
 - As Staff, I can add walk-in ticket from EventDetail
 - As Owner, I can invite teammates by email as coordinator/volunteer (pending if they haven't signed up — auto-join on register), see all members inside the event, remove them or cancel pending invites
 - As Coordinator/Volunteer, I only see events I'm on the team of, and I can leave a team myself
+- As Owner/Coordinator, I can remove someone's entry from the roll by picking a reason (Misbehavior / Fake details / Duplicate ticket / Other); removed tickets show the reason at the gate and on the stub, don't count in totals, and can be restored
 
 ## 5. Functional Requirements
 ### 5.1 Auth
@@ -80,10 +81,13 @@ Event fields: title, description, venue, date, category (MUSIC/TECH/FOOD/MEETUP/
 - `GET /api/tickets/code/:code` - PUBLIC. Upper-cases code, populates event. For stub page.
 - `GET /api/tickets/event/:eventId?search=` (team member) - list max 200, regex on name/email/mobile/code
 - `POST /api/tickets/event/:eventId` (team member) - walk-in create, all 4 fields required, duplicate-email guarded
-- `POST /api/tickets/checkin {code, eventId}` (auth) - trims/upper-cases, accepts full URL (takes after `/`):
+- `POST /api/tickets/checkin {code, eventId}` (team) - trims/upper-cases, accepts full URL (takes after `/`):
   1. Not found -> 404 `{status:INVALID}`
-  2. isUsed -> 400 `{status:ALREADY_USED, ticket}`
-  3. Else isUsed=true, usedAt=now, checkedInBy -> 200 `{status:SUCCESS, ticket}`
+  2. Revoked -> 403 `{status:REVOKED, ticket}` (reason shown at gate)
+  3. isUsed -> 400 `{status:ALREADY_USED, ticket}`
+  4. Else isUsed=true, usedAt=now, checkedInBy -> 200 `{status:SUCCESS, ticket}`
+- `POST /api/tickets/:id/revoke {reason}` (owner/coordinator) - reason must be Misbehavior / Fake details / Duplicate ticket / Other; sets revoked stamp, ticket can't scan
+- `POST /api/tickets/:id/restore` (owner/coordinator) - undoes a removal
 - Impl: `backend/routes/tickets.js`
 
 Code format: 8-char uppercase, no 0/O/1/I, `crypto.randomBytes`, 3x collision retry. e.g. `K7Q2P9XA`.
@@ -111,7 +115,7 @@ Code format: 8-char uppercase, no 0/O/1/I, `crypto.randomBytes`, 3x collision re
 ```js
 User: { name, email unique, passwordHash, role: 'admin'|'staff', timestamps }
 Event: { title, description, venue, date: Date, isActive: Bool default true, createdBy: ObjectId(User) }
-Ticket: { eventId: ObjectId(Event) indexed, attendeeName, attendeeEmail, mobileNo required, age required 5-120, code unique indexed, isUsed default false, usedAt, checkedInBy: ObjectId(User) }
+Ticket: { eventId: ObjectId(Event) indexed, attendeeName, attendeeEmail, mobileNo required, age required 5-120, code unique indexed, isUsed default false, usedAt, isRevoked default false, revokeReason enum, revokedBy, revokedAt, checkedInBy: ObjectId(User) }
 Otp: { eventId, attendeeName, attendeeEmail, mobileNo, age, code 6-digit, attempts default 0, lastSentAt, expiresAt (TTL auto-delete) }
 ```
 
@@ -175,3 +179,5 @@ Line: "unique crypto codes, JWT RBAC, duplicate-scan guard, live ledger."
 - v2.6 — Login surfaces real errors (server message vs unreachable vs unknown) instead of bare "failed"; pushed for Vercel redeploy
 - v2.7 — Security fix: registration no longer grants admin to anyone (only first account on fresh DB); new users are team-scoped staff
 - v2.8 — Per-organizer isolation: any login can create events; event list/detail/tickets strictly creator+team (403 otherwise); global admin grants no event access; public invite+OTP+QR unchanged
+- Mailer now prefers Brevo HTTPS API (SMTP blocked from Render), IPv4-first DNS, server-side SMTP error logging
+- v2.9 — Entry removal with reason codes: revoke/restore routes (owner/coordinator), REVOKED gate status, removed badge + reason on roll and stub, revoked excluded from counts
